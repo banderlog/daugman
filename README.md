@@ -4,6 +4,8 @@
 
 **All in jupyter-notebook.**
 
+Eye ROI should be a square, not a rectangle.
+
 Implementation of:
 
 ![](https://i.imgur.com/lksc28g.png)
