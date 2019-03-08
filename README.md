@@ -2,7 +2,7 @@
 
 ![](https://i.imgur.com/khDB7qJ.png)
 
-**All in jupyter-notebook.**
+**All in [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/another_daugman.ipynb).**
 
 Eye ROI should be a square, not a rectangle.
 
