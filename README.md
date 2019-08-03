@@ -4,6 +4,8 @@
 
 **All in [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/another_daugman.ipynb).**
 
+or here: https://gitlab.com/snippets/1881890
+
 Eye ROI should be a square, not a rectangle.
 
 Implementation of:
