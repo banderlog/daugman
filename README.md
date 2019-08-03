@@ -2,11 +2,11 @@
 
 ![](https://i.imgur.com/khDB7qJ.png)
 
-**All in [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/another_daugman.ipynb).**
+**Examples:**  [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/another_daugman.ipynb).
 
-or here: https://gitlab.com/snippets/1881890
+**Code:** `daugman.py` or here: https://gitlab.com/snippets/1881890
 
-Eye ROI should be a square, not a rectangle.
+**NB:** Eye ROI should be a square, not a rectangle!
 
 Implementation of:
 
