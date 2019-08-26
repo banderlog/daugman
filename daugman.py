@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 import itertools
-from typing import Tuple
+import math
 
 
-def daugman(center: Tuple[int, int], start_r: int,
+def daugman(center: 'Tuple[int, int]', start_r: int,
             gray_img: 'np.array') -> 'Tuple[float, Tuple[Tuple[int, int], int]]':
     """ Function will find maximal intense radius for given center
 
@@ -32,14 +32,14 @@ def daugman(center: Tuple[int, int], start_r: int,
         cv2.circle(mask, center, r, 255, 1)
         # get pixel from original image
         radii = gray_img & mask  # it is faster than np or cv2
-        # normalize
-        tmp.append(radii[radii > 0].sum() / (2 * 3.1415 * r))
+        # normalize np.add.reduce faster than .sum()
+        tmp.append(np.add.reduce(radii[radii > 0]) / (2 * math.pi * r))
         # refresh mask
         mask.fill(0)
 
     # calculate delta of radius intensitiveness
-    tmp_np = np.array(tmp)
-    tmp_np = tmp_np[1:] - tmp_np[:-1]
+    tmp_np = np.array(tmp, dtype=np.float32)
+    tmp_np = tmp_np[1:] - tmp_np[:-1]  # x5 faster than np.diff()
     # aply gaussian filter
     tmp_np = abs(cv2.GaussianBlur(tmp_np[:-1], (1, 5), 0))
     # get maximum value
@@ -66,7 +66,7 @@ def find_iris(gray: 'np.ndarray',
     # reduce step for better accuracy
     # 's/3' is the maximum radius of a daugman() search
     a = range(0 + int(s / 3), s - int(s / 3), 3)
-    all_points = list(itertools.product(a, a))
+    all_points = itertools.product(a, a)
 
     values = []
     coords = []
@@ -80,4 +80,5 @@ def find_iris(gray: 'np.ndarray',
 
     # return the radius with biggest intensiveness delta on image
     # ((xc, yc), radius)
-    return coords[np.argmax(values)]
+    # x10 faster than coords[np.argmax(values)]
+    return coords[values.index(max(values))]
