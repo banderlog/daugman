@@ -1,0 +1,6 @@
+*.swp
+*cache*
+*checkpoints
+venv
+*.jpg
+!eye.jpg

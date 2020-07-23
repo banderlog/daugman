@@ -2,10 +2,11 @@ import cv2
 import numpy as np
 import itertools
 import math
+from typing import Tuple
 
 
-def daugman(center: 'Tuple[int, int]', start_r: int,
-            gray_img: 'np.array') -> 'Tuple[float, Tuple[Tuple[int, int], int]]':
+def daugman(center: Tuple[int, int], start_r: int,
+            gray_img: np.ndarray) -> Tuple[float, Tuple[Tuple[int, int], int]]:
     """ Function will find maximal intense radius for given center
 
         :param center:  center coordinates ``(x, y)``
@@ -38,19 +39,22 @@ def daugman(center: 'Tuple[int, int]', start_r: int,
         mask.fill(0)
 
     # calculate delta of radius intensitiveness
+    # mypy does not tolerate var type reload
     tmp_np = np.array(tmp, dtype=np.float32)
+    del tmp
+
     tmp_np = tmp_np[1:] - tmp_np[:-1]  # x5 faster than np.diff()
     # aply gaussian filter
     tmp_np = abs(cv2.GaussianBlur(tmp_np[:-1], (1, 5), 0))
     # get maximum value
     idx = np.argmax(tmp_np)
     # return value, center coords, radius
-    val = tmp[idx]
+    val = tmp_np[idx]
     return val, (center, idx + start_r)
 
 
-def find_iris(gray: 'np.ndarray',
-              start_r: int) -> 'Tuple[Tuple[int, int], int]':
+def find_iris(gray: np.ndarray,
+              start_r: int) -> Tuple[Tuple[int, int], int]:
     """ Function will apply :mod:`daugman()` on every pixel
         in calculated image slice. Basically, we are calculating
         where lies set of valid circle centers.
