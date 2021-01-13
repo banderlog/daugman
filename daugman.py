@@ -5,82 +5,90 @@ import math
 from typing import Tuple
 
 
-def daugman(center: Tuple[int, int], start_r: int,
-            gray_img: np.ndarray) -> Tuple[float, Tuple[Tuple[int, int], int]]:
-    """ Function will find maximal intense radius for given center
+import math
 
-        :param center:  center coordinates ``(x, y)``
-        :param start_r: start radius in pixels
+def daugman(gray_img: np.ndarray, center: Tuple[int, int],
+            start_r: int, end_r: int, step: int = 1) -> Tuple[float, int]:
+    """ The function will calculate pixel intensities for the circles
+        in the ``range(start_r, end_r, step)`` for a given ``center``,
+        and find a circle that precedes the biggest intensity drop
+
         :param gray_img: grayscale picture
+        :param center:  center coordinates ``(x, y)``
+        :param start_r: bottom value for iris radius in pixels
+        :param end_r: top value for iris radius in pixels
+        :param step: step value for iris radii range in pixels
 
         .. attention::
             Input grayscale image should be a square, not a rectangle
 
-        :return: (intensity_value, ((xc, yc), radius))
+        :return: intensity_value, radius
     """
-    # get separate coordinates
     x, y = center
-    # get img dimensions
-    h, w = gray_img.shape
-    # define some other vars
-    tmp = []
+    intensities = []
     mask = np.zeros_like(gray_img)
-
+    
     # for every radius in range
-    # we are presuming that iris will be no bigger than 1/3 of picture
-    for r in range(start_r, int(h / 3)):
+    radii = list(range(start_r, end_r, step))
+    for r in radii:
         # draw circle on mask
         cv2.circle(mask, center, r, 255, 1)
-        # get pixel from original image
-        radii = gray_img & mask  # it is faster than np or cv2
-        # normalize np.add.reduce faster than .sum()
-        tmp.append(np.add.reduce(radii[radii > 0]) / (2 * math.pi * r))
+        # get pixel from original image, it is faster than np or cv2
+        diff = gray_img & mask
+        # normalize, np.add.reduce faster than .sum()
+        #            diff[diff > 0] faster than .flatten()
+        intensities.append(np.add.reduce(diff[diff > 0]) / (2 * math.pi * r))
         # refresh mask
         mask.fill(0)
 
     # calculate delta of radius intensitiveness
-    # mypy does not tolerate var type reload
-    tmp_np = np.array(tmp, dtype=np.float32)
-    del tmp
+    #     mypy does not tolerate var type reload
+    intensities_np = np.array(intensities, dtype=np.float32)
+    del intensities
 
-    tmp_np = tmp_np[1:] - tmp_np[:-1]  # x5 faster than np.diff()
+    # circles intensity differences, x5 faster than np.diff()
+    intensities_np = intensities_np[1:] - intensities_np[:-1]  
     # aply gaussian filter
-    tmp_np = abs(cv2.GaussianBlur(tmp_np[:-1], (1, 5), 0))
+    #     GaussianBlur() faster than filter2D() with custom kernel
+    intensities_np = abs(cv2.GaussianBlur(intensities_np[:-1], (1, 5), 0))
     # get maximum value
-    idx = np.argmax(tmp_np)
-    # return value, center coords, radius
-    val = tmp_np[idx]
-    return val, (center, idx + start_r)
+    idx = np.argmax(intensities_np)
+    
+    # return intensity value, center coords, radius
+    return intensities_np[idx], radii[idx]
 
 
-def find_iris(gray: np.ndarray,
-              start_r: int) -> Tuple[Tuple[int, int], int]:
-    """ Function will apply :mod:`daugman()` on every pixel
-        in calculated image slice. Basically, we are calculating
-        where lies set of valid circle centers.
-        Selection of image slice guarantees that every
-        radius will be drawn in image borders.
+def find_iris(gray: np.ndarray, points_step: int,
+              daugman_start: int, daugman_end: int,
+              daugman_step: int = 1) -> Tuple[Tuple[int, int], int]:
+    """ The function will apply :func:`daugman` on every pixel in the calculated image slice.
+        Basically, we are calculating where lies set of valid circle centers.
+        It is assumed that iris center lies within central 1/3 of the image.
 
-        :param gray: graysacale square image
-        :param start_r: initial radius
+        :param gray: graysacale **square** image 
+        :param points_step: it will run daugman for each ``points_step``th point
+        :param daugman_start: bottom value for iris radius in pixels for :func:``daugman``
+        :param daugman_end: top value for iris radius in pixels for :func:``daugman``
+        :param daugman_step: step value for iris radii range in pixels for :func:``daugman``
 
         :return: radius with biggest intensiveness delta on image as ``((xc, yc), radius)``
     """
-    _, s = gray.shape
+    h, w = gray.shape
+    if h != w:
+        print('Your image is not a square!')
+        
     # reduce step for better accuracy
-    # 's/3' is the maximum radius of a daugman() search
-    a = range(0 + int(s / 3), s - int(s / 3), 3)
-    all_points = itertools.product(a, a)
+    # we will look only on dots within central 1/3 of image
+    single_axis_range = range(int(h / 3), h - int(h / 3), step)
+    all_points = itertools.product(single_axis_range, single_axis_range)
 
     values = []
     coords = []
 
-    for p in all_points:
-        tmp = daugman(p, start_r, gray)
-        if tmp is not None:
-            val, circle = tmp
-            values.append(val)
-            coords.append(circle)
+    for point in all_points:
+        val, r = daugman(gray, point, daugman_start, daugman_end, daugman_step)
+        values.append(val)
+        coords.append([point, r])
 
     # return the radius with biggest intensiveness delta on image
     # ((xc, yc), radius)
