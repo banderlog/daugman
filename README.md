@@ -1,8 +1,12 @@
-# Daugman’s algorithm for Iris detection 
+# Daugman’s algorithm for Iris detection
+
+Actually, it could be used for the detection of any circular objects on enough contrast background.
 
 ![](https://i.imgur.com/khDB7qJ.png)
 
-**Examples:**  [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/another_daugman.ipynb).
+**Examples:**  [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/example.ipynb).
+
+**Explanation:**  [jupyter-notebook](https://nbviewer.jupyter.org/github/banderlog/daugman/blob/master/daugman_visual_explanation.ipynb).
 
 **NB:** Eye ROI should be a square, not a rectangle!
 

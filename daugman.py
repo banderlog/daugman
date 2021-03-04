@@ -2,10 +2,8 @@ import cv2
 import numpy as np
 import itertools
 import math
-from typing import Tuple
+from typing import Tuple, List
 
-
-import math
 
 def daugman(gray_img: np.ndarray, center: Tuple[int, int],
             start_r: int, end_r: int, step: int = 1) -> Tuple[float, int]:
@@ -27,9 +25,9 @@ def daugman(gray_img: np.ndarray, center: Tuple[int, int],
     x, y = center
     intensities = []
     mask = np.zeros_like(gray_img)
-    
+
     # for every radius in range
-    radii = list(range(start_r, end_r, step))
+    radii = list(range(start_r, end_r, step))  # type: List[int]
     for r in radii:
         # draw circle on mask
         cv2.circle(mask, center, r, 255, 1)
@@ -47,50 +45,53 @@ def daugman(gray_img: np.ndarray, center: Tuple[int, int],
     del intensities
 
     # circles intensity differences, x5 faster than np.diff()
-    intensities_np = intensities_np[1:] - intensities_np[:-1]  
+    intensities_np = intensities_np[1:] - intensities_np[:-1]
     # aply gaussian filter
     #     GaussianBlur() faster than filter2D() with custom kernel
     intensities_np = abs(cv2.GaussianBlur(intensities_np[:-1], (1, 5), 0))
     # get maximum value
-    idx = np.argmax(intensities_np)
-    
-    # return intensity value, center coords, radius
+    idx = np.argmax(intensities_np)  # type: int
+
+    # return intensity value, radius
     return intensities_np[idx], radii[idx]
 
 
-def find_iris(gray: np.ndarray, points_step: int,
+def find_iris(gray: np.ndarray, *,
               daugman_start: int, daugman_end: int,
-              daugman_step: int = 1) -> Tuple[Tuple[int, int], int]:
+              daugman_step: int = 1, points_step: int = 1,) -> Tuple[Tuple[int, int], int]:
     """ The function will apply :func:`daugman` on every pixel in the calculated image slice.
         Basically, we are calculating where lies set of valid circle centers.
         It is assumed that iris center lies within central 1/3 of the image.
 
-        :param gray: graysacale **square** image 
-        :param points_step: it will run daugman for each ``points_step``th point
+        :param gray: graysacale **square** image
+        :param points_step: it will run daugman for each ``points_step``th point.
+                            It has linear correlation with overall iris search speed
         :param daugman_start: bottom value for iris radius in pixels for :func:``daugman``
         :param daugman_end: top value for iris radius in pixels for :func:``daugman``
-        :param daugman_step: step value for iris radii range in pixels for :func:``daugman``
+        :param daugman_step: step value for iris radii range in pixels for :func:``daugman``.
+                             It has linear correlation with overall iris search speed
 
         :return: radius with biggest intensiveness delta on image as ``((xc, yc), radius)``
     """
     h, w = gray.shape
     if h != w:
         print('Your image is not a square!')
-        
+
     # reduce step for better accuracy
     # we will look only on dots within central 1/3 of image
-    single_axis_range = range(int(h / 3), h - int(h / 3), step)
+    single_axis_range = range(int(h / 3), h - int(h / 3), points_step)
     all_points = itertools.product(single_axis_range, single_axis_range)
 
-    values = []
-    coords = []
+    intensity_values = []
+    coords = []  # List[Tuple[Tuple(int, int), int]]
 
     for point in all_points:
         val, r = daugman(gray, point, daugman_start, daugman_end, daugman_step)
-        values.append(val)
-        coords.append([point, r])
+        intensity_values.append(val)
+        coords.append((point, r))
 
     # return the radius with biggest intensiveness delta on image
     # ((xc, yc), radius)
     # x10 faster than coords[np.argmax(values)]
-    return coords[values.index(max(values))]
+    best_idx = intensity_values.index(max(intensity_values))
+    return coords[best_idx]
