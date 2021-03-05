@@ -45,10 +45,14 @@ def daugman(gray_img: np.ndarray, center: Tuple[int, int],
     del intensities
 
     # circles intensity differences, x5 faster than np.diff()
-    intensities_np = intensities_np[1:] - intensities_np[:-1]
+    intensities_np = intensities_np[:-1] - intensities_np[1:]
     # aply gaussian filter
     #     GaussianBlur() faster than filter2D() with custom kernel
-    intensities_np = abs(cv2.GaussianBlur(intensities_np[:-1], (1, 5), 0))
+    # original kernel:
+    # > The Gaussian filter in our case is designedin MATLAB and
+    # > is a 1 by 5 (rows by columns) vector with intensity values
+    # > given by vector A = [0.0003 0.1065 0.7866 0.1065 0.0003]
+    intensities_np = abs(cv2.GaussianBlur(intensities_np, (1, 5), 0))
     # get maximum value
     idx = np.argmax(intensities_np)  # type: int
 

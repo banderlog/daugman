@@ -109,10 +109,10 @@ class DaugmanVisualExplanation:
         _ = plt.imshow(img[::, ::, ::-1])
         return img_dot
 
-    def find_iris(self) -> np.ndarray:
+    def find_iris(self, *, daugman_start, daugman_end, daugman_step, points_step) -> np.ndarray:
         gray_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
-        answer = find_iris(gray_img, daugman_start=self.start_r, daugman_end=self.end_r,
-                           daugman_step=self.circle_step, points_step=self.points_step)
+        answer = find_iris(gray_img, daugman_start=daugman_start, daugman_end=daugman_end,
+                           daugman_step=daugman_step, points_step=points_step)
         iris_center, iris_rad = answer
         out = self.img.copy()
         cv2.circle(out, iris_center, iris_rad, (0, 0, 255), 1)
@@ -133,3 +133,15 @@ class DaugmanVisualExplanation:
         # blue
         img = cv2.circle(img, (50, 50), 25, [0, 0, 255], 1)
         _ = plt.imshow(img)
+
+    def find_iris_on_binary_image(self, *, daugman_start, daugman_end, daugman_step, points_step) -> None:
+        # create simple image
+        img = np.full([100, 100, 3], 255, dtype=np.uint8)
+        img = cv2.circle(img, (50, 50), 20, [0, 0, 0], -1)
+        gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        answer = find_iris(gray_img, daugman_start=daugman_start, daugman_end=daugman_end,
+                           daugman_step=daugman_step, points_step=points_step)
+        iris_center, iris_rad = answer
+        cv2.circle(img, iris_center, iris_rad, (0, 0, 255), 1)
+        _ = plt.imshow(img[::, ::, ::-1])
